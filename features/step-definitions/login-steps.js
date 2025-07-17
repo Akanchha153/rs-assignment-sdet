@@ -10,6 +10,7 @@ Given("Login to Rudderstack", async () => {
   await browser.pause(10000);
   console.log("Logging in with:", config.validEmail, config.validPassword);
   await loginPage.login(config.validEmail, config.validPassword);
+// have to manually click i'll do it later and go to dashboard option as While logging manually those page are not appearing
   await loginPage.goToConnections();
 });
 
