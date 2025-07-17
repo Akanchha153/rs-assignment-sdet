@@ -13,6 +13,7 @@ nvm use 20
 
 ### Clone repository
 `git clone https://github.com/your-username/rs-assignment.git`
+
 `cd rs-assignment`
 
 ### Install Dependencies
