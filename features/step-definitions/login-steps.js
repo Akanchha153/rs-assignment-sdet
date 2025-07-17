@@ -1,60 +1,28 @@
-const { Given, When, Then } = require("@wdio/cucumber-framework");
-require("dotenv").config();
+import { Given, When, Then } from "@wdio/cucumber-framework";
+import extractUrl from "../../pages/extractUrl.js";
+import loginPage from "../../pages/loginPage.js";
+import config from "../../test-utils/config.js";
+import sendRudderEvent from "../../test-utils/rudder-api.js";
+import webhook from "../../pages/webhook.js";
 
 Given("Login to Rudderstack", async () => {
-  await browser.url("https://app.rudderstack.com/login");
-
-  const emailInput = await $('input[type="email"]');
-  await emailInput.setValue(process.env.EMAIL);
-
-  const passwordInput = await $('input[type="password"]');
-  await passwordInput.waitForExist({ timeout: 5000 });
-  await passwordInput.setValue(process.env.PASSWORD);
-
-  const loginButton = await $('button[type="button"]');
-  await loginButton.click();
-  // await browser.debug();
-  await browser.pause(5000);
-
-  const connectionsNav = await $(
-    'a[href="/"][data-testid="sub-menu-connections"]'
-  );
-  // have to manually click on i'll do it later popup and go to Dashboard button as page not coming when logging manually
-  await connectionsNav.waitForDisplayed({ timeout: 100000 });
-  await connectionsNav.click();
+  await loginPage.open();
+  await browser.pause(10000);
+  console.log("Logging in with:", config.validEmail, config.validPassword);
+  await loginPage.login(config.validEmail, config.validPassword);
+  await loginPage.goToConnections();
 });
 
-When("Extract the data plane URL and write key", async () => {
-  const dataPlaneElement = await $("span.text-ellipsis");
-  // await dataPlaneElement.waitForExist({ timeout: 5000 });
-  const dataPlaneUrl = await dataPlaneElement.getText();
-
-  console.log("Data Plane URL:", dataPlaneUrl);
+When("Extract the data plane URL and write key", async function () {
   this.sharedData = this.sharedData || {};
-  this.sharedData.dataPlaneUrl = dataPlaneUrl;
+  this.sharedData.dataPlaneUrl = await extractUrl.getDataPlaneUrl();
+  this.sharedData.writeKey = await extractUrl.getWriteKey();
 
-  const allSpans = await $$("span.text-ellipsis");
-  let writeKey = "";
-
-  for (const el of allSpans) {
-    const text = await el.getText();
-    if (text.startsWith("Write key")) {
-      writeKey = text.replace("Write key ", "").trim();
-      break;
-    }
-  }
-
-  if (!writeKey) {
-    throw new Error("Write Key not found on the page.");
-  }
-
-  console.log("Write Key:", writeKey);
-  this.sharedData.writeKey = writeKey;
+  console.log("Data Plane URL:", this.sharedData.dataPlaneUrl);
+  console.log("Write Key:", this.sharedData.writeKey);
 });
 
-When("Send an event via API", async () => {
-  const { sendRudderEvent } = require("../../test-utils/rudder-api");
-
+When("Send an event via API", async function () {
   const writeKey = this.sharedData?.writeKey;
   const dataPlaneUrl = this.sharedData?.dataPlaneUrl;
 
@@ -66,26 +34,12 @@ When("Send an event via API", async () => {
   await sendRudderEvent(writeKey, dataPlaneUrl);
 });
 
-Then("See the event delivered in webhook destination", async () => {
-  const destinationsTab = await $('a[href="/destinations"]');
-  await destinationsTab.click();
+Then("See the event delivered in webhook destination", async function () {
+  await webhook.goToDestinations();
+  await webhook.goToRSWebhook();
+  await webhook.goToEventsTab();
 
-  //  const destinationRow = await $('div*=RSWEBHOOK');
-  // await destinationRow.scrollIntoView();
-  // await destinationRow.click();
-
-  const destinationRow = await $('//div[contains(text(), "RSWEBHOOK")]');
-  await destinationRow.scrollIntoView();
-  await destinationRow.click();
-
-  const eventsTab = await $('div[role="tab"][id*="Events"]');
-  await eventsTab.click();
-
-  const deliveredCount = await $("span=Delivered")
-    .$("..")
-    .$("h2 span")
-    .getText();
-  const failedCount = await $("span=Failed").$("..").$("h2 span").getText();
+  const { deliveredCount, failedCount } = await webhook.getDeliveryCounts();
 
   console.log(`Delivered Events: ${deliveredCount}`);
   console.log(`Failed Events: ${failedCount}`);
