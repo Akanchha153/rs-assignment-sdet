@@ -20,10 +20,13 @@ nvm use 20
 `npm install`
 
 ### Add Login Details to .env
-1.In .env.Local set values for:
-        BASE_URL=https://app.rudderstack.com
-        EMAIL=your-email@example.com
-        PASSWORD=your-password
+  In .env.Local set values for:
+
+        `BASE_URL=https://app.rudderstack.com`
+
+        `EMAIL=your-email@example.com`
+
+        `PASSWORD=your-password`
 
 ### RUN test 
 Run `npx wdio run wdio.conf.js`
