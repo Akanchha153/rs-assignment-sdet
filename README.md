@@ -12,11 +12,11 @@ nvm use 20
 ## Set up Intstruction
 
 ### Clone repository
-git clone https://github.com/your-username/rs-assignment.git
-cd rs-assignment
+`git clone https://github.com/your-username/rs-assignment.git`
+`cd rs-assignment`
 
 ### Install Dependencies
-npm i
+`npm install`
 
 ### Add Login Details to .env
 1.In .env.Local set values for:
